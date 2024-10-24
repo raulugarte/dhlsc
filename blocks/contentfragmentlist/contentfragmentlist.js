@@ -10,7 +10,7 @@ function getMetadata(name) {
 //const aem = "https://publish-p107058-e1001010.adobeaemcloud.com";
   const aem = "https://author-p130407-e1279066.adobeaemcloud.com";
 
-export default function decorate(block) {
+export default async function decorate(block) {
 
 
 
