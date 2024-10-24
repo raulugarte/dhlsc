@@ -10,6 +10,11 @@ function getMetadata(name) {
 //const aem = "https://publish-p107058-e1001010.adobeaemcloud.com";
   const aem = "https://author-p130407-e1279066.adobeaemcloud.com";
 
+export default function decorate(block) {
+
+
+
+  
   const aempublishurl = 'https://publish-p130407-e1279066.adobeaemcloud.com';
   const aemauthorurl = 'https://author-p130407-e1279066.adobeaemcloud.com';
   const persistedquery = '/graphql/execute.json/securbank/ArticleList';
@@ -35,8 +40,15 @@ const cfReq = await fetch(url, options)
 
   const itemId = `urn:aemconnection:${articlelistpath}/jcr:content/data/master`;
 
-export default function decorate(block) {
 
+
+
+
+
+
+
+
+  
 
   const slugDiv = block.querySelector('div:nth-child(1)'); 
   const slugID = document.createElement('div');
