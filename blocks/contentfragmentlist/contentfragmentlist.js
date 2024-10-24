@@ -47,6 +47,8 @@ export default async function decorate(block) {
  * @property {URL} image - Image for the category.
  */
 
+
+
 /**
  * @async
  * @param {string} persistedQuery
@@ -54,13 +56,6 @@ export default async function decorate(block) {
  */
 async function getCategories(persistedQuery, isUE) {
     const url = addCacheKiller(persistedQuery);
-    
-
-    /* const json = await fetch(url, {
-        credentials: "include"
-    }).then((response) => response.json());
-    */
-
 
     try {
         const response = await fetch(url, {
@@ -71,41 +66,39 @@ async function getCategories(persistedQuery, isUE) {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        }
 
         const json = await response.json();
-    
-    
-    
-    /*const items = json?.data?.categoryList?.items || [] */
-    const items = json?.data?.adventureList?.items || []
+        const items = json?.data?.adventureList?.items || [];
 
-    return items.map((item) => {
-        /*const imageUrl = getImageUrl(item.image, isUE);*/
-        const imageUrl = getImageUrl(item.primaryImage, isUE);
-        return {
-            _path: item._path,
-            title: item.title,
-            /*description: item.description["plaintext"],*/
-            description: item.slug["plaintext"],
-            cta: { 
-                text: item.ctaText,
-                link: item.ctaLink,
-            },
-            image: {
-                url: imageUrl,
-                /*deliveryUrl: getImageUrl(item.image, false),*/
-                /*width: item.image["width"],*/
-                /*height: item.image["height"],*/
-                /*mimeType: item.image["mimeType"],*/
-                deliveryUrl: getImageUrl(item.primaryImage, false),
-                width: item.primaryImage["width"],
-                height: item.primaryImage["height"],
-                mimeType: item.primaryImage["mimeType"],
-            },
-        };
-    });
+        return items.map((item) => {
+            const imageUrl = getImageUrl(item.primaryImage, isUE);
+            return {
+                _path: item._path,
+                title: item.title,
+                description: item.slug["plaintext"],
+                cta: { 
+                    text: item.ctaText,
+                    link: item.ctaLink,
+                },
+                image: {
+                    url: imageUrl,
+                    deliveryUrl: getImageUrl(item.primaryImage, false),
+                    width: item.primaryImage["width"],
+                    height: item.primaryImage["height"],
+                    mimeType: item.primaryImage["mimeType"],
+                },
+            };
+        });
+    } catch (error) {
+        console.error("Fetch error:", error);
+        return []; // Return an empty array or handle the error as needed
+    }
 }
+
+
+
+
+
 /**
  * Detects whether the site is embedded in the universal editor by counting parent frames
  * @returns {boolean}
