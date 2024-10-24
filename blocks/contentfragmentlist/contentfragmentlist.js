@@ -23,6 +23,18 @@ const url = window.location && window.location.origin && window.location.origin.
   const options = { credentials: 'include' };
 
 
+const cfReq = await fetch(url, options)
+    .then((response) => response.json())
+    .then((contentfragment) => {
+      let offer = '';
+      if (contentfragment.data) {
+        offer = contentfragment.data.ArticleList.item;
+      }
+      return offer;
+    });
+
+  const itemId = `urn:aemconnection:${articlelistpath}/jcr:content/data/master`;
+
 export default function decorate(block) {
 
 
