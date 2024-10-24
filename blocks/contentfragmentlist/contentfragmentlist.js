@@ -17,7 +17,10 @@ function getMetadata(name) {
   const articlelistpath = block.querySelector(':scope div:nth-child(1) > div a').innerHTML.trim();
   const variationname = block.querySelector(':scope div:nth-child(2) > div').innerHTML.trim();
 
-
+const url = window.location && window.location.origin && window.location.origin.includes('author')
+    ? `${aemauthorurl}${persistedquery};path=${articlelistpath};variation=${variationname};ts=${Math.random() * 1000}`
+    : `${aempublishurl}${persistedquery};path=${articlelistpath};variation=${variationname};ts=${Math.random() * 1000}`;
+  const options = { credentials: 'include' };
 
 
 export default function decorate(block) {
