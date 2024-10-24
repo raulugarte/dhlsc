@@ -346,10 +346,19 @@
         "label": "Offer Content Fragment path",
         "valueType": "string"
       },
+    
+      {
+        "component": "text-input",
+        "name": "variation",
+        "value": "",
+        "label": "Variation",
+        "valueType": "string"
+      }
+    ]
+  },
 
 
-
-         {
+           {
     "id": "contentfragmentlist",
     "fields": [
       {
@@ -361,18 +370,7 @@
       }
     ]
   }, 
-
-
-      
-      {
-        "component": "text-input",
-        "name": "variation",
-        "value": "",
-        "label": "Variation",
-        "valueType": "string"
-      }
-    ]
-  },
+  
   {
     "id": "featurearticles",
     "fields": [
