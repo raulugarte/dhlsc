@@ -54,10 +54,28 @@ export default async function decorate(block) {
  */
 async function getCategories(persistedQuery, isUE) {
     const url = addCacheKiller(persistedQuery);
+    
 
-    const json = await fetch(url, {
+    /* const json = await fetch(url, {
         credentials: "include"
     }).then((response) => response.json());
+    */
+
+
+    try {
+        const response = await fetch(url, {
+            credentials: "include"
+        });
+
+        // Check if the response is OK (status in the range 200-299)
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const json = await response.json();
+    
+    
+    
     /*const items = json?.data?.categoryList?.items || [] */
     const items = json?.data?.adventureList?.items || []
 
