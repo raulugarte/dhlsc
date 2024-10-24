@@ -71,4 +71,6 @@ document.getElementById(adventureDiv.id).innerHTML += "<section>" + "Itinerary: 
   console.log('Error fetching data:', error);
 });
 
+  
+
 }
