@@ -1,113 +1,122 @@
-function getMetadata(name) {
-  const attr = name && name.includes(':') ? 'property' : 'name';
-  const meta = [...document.querySelectorAll(`meta[${attr}="${name}"]`)]
-    .map((m) => m.content)
-    .join(', ');
-  return meta || '';
+export default async function decorate(block) {
+    const isUE = isUniversalEditorActive();
+    const persistedQuery = (isUE) ? useAuthorQuery(block.textContent) : block.textContent;
+    const categories = await getCategories(persistedQuery, isUE);
+    
+    const root = document.createElement('div');
+    root.setAttribute("class", "category-list");
+    
+    categories.forEach((category) => {
+        const elem = document.createElement('div');
+        elem.setAttribute("class", "category-item");
+        elem.setAttribute("itemscope", "");
+        elem.setAttribute("itemid", `urn:aemconnection:${category._path}/jcr:content/data/master`);
+        elem.setAttribute("itemtype", "reference");
+        elem.innerHTML = `
+            <div class="category-item-image">
+                <picture>
+                    <source type="image/webp" srcset="${category.heroImage.deliveryUrl}?preferwebp=true" media="(min-width: 600px)">
+                    <source type="image/webp" srcset="${category.heroImage.deliveryUrl}?preferwebp=true&width=750">
+                    <source type="${category.heroImage.mimeType}" srcset="${category.heroImage.deliveryUrl}" media="(min-width: 600px)">
+                    <img src="${category.heroImage.url}" width="${category.heroImage.width}" height="${category.heroImage.height}" alt="${category.headline}" type="${category.heroImage.mimeType}" itemprop="primaryImage" itemtype="image" loading="lazy">
+                </picture>
+            </div>
+            <div class="category-item-content">
+                <h2 class="category-item-title" itemprop="title" itemtype="text">${category.headline}</h2>
+                <p class="category-item-desc" itemprop="description" itemtype="richtext">${category.detail}</p>
+            </div>`;
+        root.appendChild(elem);
+    });
+    block.textContent = "";
+    block.append(root);
 }
 
-//const aem = "http://localhost:4503";
-//const aem = "https://publish-p107058-e1001010.adobeaemcloud.com";
-  const aem = "https://author-p130407-e1279066.adobeaemcloud.com";
+/**
+ * The complete Triforce, or one or more components of the Triforce.
+ * @typedef {Object} Category
+ * @property {string} _path - Path to the category content fragment.
+ * @property {string} title - Title of the category.
+ * @property {string} description - Description of the category.
+ * @property {string} ctaText - Call to action text.
+ * @property {string} ctaLink - Call to action link.
+ * @property {URL} image - Image for the category.
+ */
 
-export default async function decorate(block) {
+/**
+ * @async
+ * @param {string} persistedQuery
+ * @return {Promise<Category[]>} results 
+ */
+async function getCategories(persistedQuery, isUE) {
+    const url = addCacheKiller(persistedQuery);
 
-  console.log(block);
+    const json = await fetch(url, {
+        credentials: "include"
+    }).then((response) => response.json());
+    /*const items = json?.data?.categoryList?.items || [] */
+    const items = json?.data?.offerList?.items || []
 
-  
-  const aempublishurl = 'https://publish-p130407-e1279066.adobeaemcloud.com';
-  const aemauthorurl = 'https://author-p130407-e1279066.adobeaemcloud.com';
-  const persistedquery = '/graphql/execute.json/securbank/OfferList';
-  
-  const offerlistpath = block.querySelector(':scope div:nth-child(1) > div a').innerHTML.trim();
-  const variationname = block.querySelector(':scope div:nth-child(2) > div').innerHTML.trim();
-
-const url = window.location && window.location.origin && window.location.origin.includes('author')
-    ? `${aemauthorurl}${persistedquery};path=${offerlistpath};variation=${variationname};ts=${Math.random() * 1000}`
-    : `${aempublishurl}${persistedquery};path=${offerlistpath};variation=${variationname};ts=${Math.random() * 1000}`;
-  const options = { credentials: 'include' };
-
-
-const cfReq = await fetch(url, options)
-    .then((response) => response.json())
-    .then((contentfragment) => {
-      let offer = '';
-      if (contentfragment.data) {
-        offer = contentfragment.data.OfferList.item;
-      }
-      return offer;
+    return items.map((item) => {
+        /*const imageUrl = getImageUrl(item.image, isUE);*/
+        const imageUrl = getImageUrl(item.heroImage, isUE);
+        return {
+            _path: item._path,
+            title: item.title,
+            /*description: item.description["plaintext"],*/
+            description: item._locale["plaintext"],
+            cta: { 
+                text: item.callToAction
+                /*link: item.ctaLink,*/
+            },
+            image: {
+                url: imageUrl,
+                /*deliveryUrl: getImageUrl(item.image, false),*/
+                /*width: item.image["width"],*/
+                /*height: item.image["height"],*/
+                /*mimeType: item.image["mimeType"],*/
+                deliveryUrl: getImageUrl(item.heroImage, false),
+                width: item.heroImage["width"],
+                height: item.heroImage["height"],
+                mimeType: item.heroImage["mimeType"],
+            },
+        };
     });
+}
+/**
+ * Detects whether the site is embedded in the universal editor by counting parent frames
+ * @returns {boolean}
+ */
+function isUniversalEditorActive() {
+    return window.location.ancestorOrigins?.length > 0;
+}
 
-  const itemId = `urn:aemconnection:${offerlistpath}/jcr:content/data/master`;
+/**
+ * Update the persisted query url to use the authoring endpoint
+ * @param {string} persistedQuery 
+ * @returns {string}
+ */
+function useAuthorQuery(persistedQuery) {
+    return persistedQuery.replace("//publish-", "//author-");
+}
+
+/**
+ * Updates url to contain a query parameter to prevent caching
+ * @param {string} url 
+ * @returns url with cache killer query parameter
+ */
+function addCacheKiller(url) {
+    let newUrl = new URL(url);
+    let params = newUrl.searchParams;
+    params.append("ck", Date.now());
+    return newUrl.toString();
+}
 
 
-
-
-
-
-
-
-
-  
-
-  const slugDiv = block.querySelector('div:nth-child(1)'); 
-  const slugID = document.createElement('div');
-  slugID.id = 'slug';
-  slugDiv.replaceWith(slugID);
-  slugID.innerHTML = `${slugDiv.innerHTML}`;
-  const slugTemp = slugID.innerHTML.replace(/<div>|<\/div>/g, '');
-  const slug = slugTemp.match(/\S+/g);
-  
-  const quoteDiv = block.querySelector('div:last-of-type');
-  const adventureDiv = document.createElement('div');
-  adventureDiv.id = "adventure-" + slug; 
-  quoteDiv.replaceWith(adventureDiv);
-
-  /* RUG */
-  const slug2 = slug[3].slice(slug[3].indexOf('>')+1,slug[3].indexOf('<'));
-  /* const requestRUG = aem + '/graphql/execute.json/aem-demo-assets/adventure-by-slug;slug=' + slug2; */
-  const requestRUG = aem + '/graphql/execute.json/bs/article-by-slug;slug=' + slug2;
-  
-  console.log(slug2);
-  console.log(requestRUG);
-
-  //fetch(aem + '/graphql/execute.json/aem-demo-assets/adventures-by-slug;slug=' + slug)
-fetch(aem + '/graphql/execute.json/bs/article-by-slug;slug=' + slug2)
-.then(response => response.json())
-.then(response => {
-
-//const backgroundImage = response.data.adventureList.items[0].PrimaryImage._publishUrl;
-const backgroundImage = response.data.articleList.items[0].image._publishUrl;
-document.getElementById(adventureDiv.id).innerHTML = "<section><img src=" + backgroundImage + "></section>";  
-
-//const adventureTitle = response.data.adventureList.items[0].title;
-const adventureTitle = response.data.articleList.items[0].title;
-document.getElementById(adventureDiv.id).innerHTML += "<section><h3>"+ adventureTitle + "</h3></section>";
-
-//const adventureDesc = response.data.adventureList.items[0].description.plaintext;
-const adventureDesc = response.data.articleList.items[0].main.plaintext;
-document.getElementById(adventureDiv.id).innerHTML += "<section>" + adventureDesc + "</section>";
-
-const adventureType = response.data.adventureList.items[0].adventureType;
-document.getElementById(adventureDiv.id).innerHTML += "<section>" + "Adventure Type: " + adventureType + "</section>";
-
-const tripLength = response.data.adventureList.items[0].tripLength;
-document.getElementById(adventureDiv.id).innerHTML += "<section>" +"Trip Length: " + tripLength + "</section>";
-
-const tripDifficulty = response.data.adventureList.items[0].difficulty;
-document.getElementById(adventureDiv.id).innerHTML += "<section>" + "Difficulty: " + tripDifficulty + "</section>";
-
-const groupSize = response.data.adventureList.items[0].groupSize;
-document.getElementById(adventureDiv.id).innerHTML += "<section>" + "Group Size: " + groupSize + "</section>";
-
-const tripItinerary= response.data.adventureList.items[0].itinerary.html;
-document.getElementById(adventureDiv.id).innerHTML += "<section>" + "Itinerary: </br>" + tripItinerary + "</section>";
-
-})
-.catch(error => {
-  console.log('Error fetching data:', error);
-});
-
-  
-
+function getImageUrl(image, isUE) {
+    if (isUE) { 
+        return image["_authorUrl"];
+    }
+    const url = new URL(image["_publishUrl"])
+    return `https://${url.hostname}${image["_dynamicUrl"]}`
+    /*return `${image["_publishUrl"]}`*/
 }
