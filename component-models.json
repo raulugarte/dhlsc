@@ -364,8 +364,8 @@
       {
         "component": "text-input",
         "name": "text",
-        "value": "",
-        "label": "Slug",
+        "value": "en",
+        "label": "Locale",
         "valueType": "string"
       }
     ]
