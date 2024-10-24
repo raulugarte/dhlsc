@@ -2,7 +2,8 @@ export default async function decorate(block) {
     const isUE = isUniversalEditorActive();
     /* const persistedQuery = (isUE) ? useAuthorQuery(block.textContent) : block.textContent; */
     const persistedQuery = (isUE) ? useAuthorQuery(block.baseURI.trim()) : block.baseURI.trim();
-
+    const aem = "https://author-p130407-e1279066.adobeaemcloud.com";
+    persistedQuery=aem;
     const categories = await getCategories(persistedQuery, isUE);
     
     const root = document.createElement('div');
