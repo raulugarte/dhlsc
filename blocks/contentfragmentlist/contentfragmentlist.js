@@ -71,6 +71,7 @@ async function getCategories(persistedQuery, isUE) {
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
+        }
 
         const json = await response.json();
     
