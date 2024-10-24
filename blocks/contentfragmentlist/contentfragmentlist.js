@@ -1,139 +1,76 @@
-export default async function decorate(block) {
-    const isUE = isUniversalEditorActive();
-    /* const persistedQuery = (isUE) ? useAuthorQuery(block.textContent) : block.textContent; */
-
-    const aem = "https://author-p130407-e1279066.adobeaemcloud.com";
-    const persistedQuery = (isUE) ? useAuthorQuery(aem.trim()) : aem.trim();
-    
-    
-    const categories = await getCategories(persistedQuery, isUE);
-    
-    const root = document.createElement('div');
-    root.setAttribute("class", "category-list");
-    
-    categories.forEach((category) => {
-        const elem = document.createElement('div');
-        elem.setAttribute("class", "category-item");
-        elem.setAttribute("itemscope", "");
-        elem.setAttribute("itemid", `urn:aemconnection:${category._path}/jcr:content/data/master`);
-        elem.setAttribute("itemtype", "reference");
-        elem.innerHTML = `
-            <div class="category-item-image">
-                <picture>
-                    <source type="image/webp" srcset="${category.image.deliveryUrl}?preferwebp=true" media="(min-width: 600px)">
-                    <source type="image/webp" srcset="${category.image.deliveryUrl}?preferwebp=true&width=750">
-                    <source type="${category.image.mimeType}" srcset="${category.image.deliveryUrl}" media="(min-width: 600px)">
-                    <img src="${category.image.url}" width="${category.image.width}" height="${category.image.height}" alt="${category.title}" type="${category.image.mimeType}" itemprop="primaryImage" itemtype="image" loading="lazy">
-                </picture>
-            </div>
-            <div class="category-item-content">
-                <h2 class="category-item-title" itemprop="title" itemtype="text">${category.title}</h2>
-                <p class="category-item-desc" itemprop="description" itemtype="richtext">${category.description}</p>
-            </div>`;
-        root.appendChild(elem);
-    });
-    block.textContent = "";
-    block.append(root);
+function getMetadata(name) {
+  const attr = name && name.includes(':') ? 'property' : 'name';
+  const meta = [...document.querySelectorAll(`meta[${attr}="${name}"]`)]
+    .map((m) => m.content)
+    .join(', ');
+  return meta || '';
 }
 
-/**
- * The complete Triforce, or one or more components of the Triforce.
- * @typedef {Object} Category
- * @property {string} _path - Path to the category content fragment.
- * @property {string} title - Title of the category.
- * @property {string} description - Description of the category.
- * @property {string} ctaText - Call to action text.
- * @property {string} ctaLink - Call to action link.
- * @property {URL} image - Image for the category.
- */
+//const aem = "http://localhost:4503";
+//const aem = "https://publish-p107058-e1001010.adobeaemcloud.com";
+  const aem = "https://author-p130407-e1279066.adobeaemcloud.com";
+
+export default function decorate(block) {
 
 
+  const slugDiv = block.querySelector('div:nth-child(1)'); 
+  const slugID = document.createElement('div');
+  slugID.id = 'slug';
+  slugDiv.replaceWith(slugID);
+  slugID.innerHTML = `${slugDiv.innerHTML}`;
+  const slugTemp = slugID.innerHTML.replace(/<div>|<\/div>/g, '');
+  const slug = slugTemp.match(/\S+/g);
+  
+  const quoteDiv = block.querySelector('div:last-of-type');
+  const adventureDiv = document.createElement('div');
+  adventureDiv.id = "adventure-" + slug; 
+  quoteDiv.replaceWith(adventureDiv);
 
-/**
- * @async
- * @param {string} persistedQuery
- * @return {Promise<Category[]>} results 
- */
-async function getCategories(persistedQuery, isUE) {
-    const url = addCacheKiller(persistedQuery);
+  /* RUG */
+  const slug2 = slug[3].slice(slug[3].indexOf('>')+1,slug[3].indexOf('<'));
+  /* const requestRUG = aem + '/graphql/execute.json/aem-demo-assets/adventure-by-slug;slug=' + slug2; */
+  const requestRUG = aem + '/graphql/execute.json/bs/article-by-slug;slug=' + slug2;
+  
+  console.log(slug2);
+  console.log(requestRUG);
 
-    try {
-        const response = await fetch(url, {
-            credentials: "include"
-        });
+  //fetch(aem + '/graphql/execute.json/aem-demo-assets/adventures-by-slug;slug=' + slug)
+fetch(aem + '/graphql/execute.json/bs/article-by-slug;slug=' + slug2)
+.then(response => response.json())
+.then(response => {
 
-        // Check if the response is OK (status in the range 200-299)
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+//const backgroundImage = response.data.adventureList.items[0].PrimaryImage._publishUrl;
+const backgroundImage = response.data.articleList.items[0].image._publishUrl;
+document.getElementById(adventureDiv.id).innerHTML = "<section><img src=" + backgroundImage + "></section>";  
 
-        const json = await response.json();
-        const items = json?.data?.adventureList?.items || [];
+//const adventureTitle = response.data.adventureList.items[0].title;
+const adventureTitle = response.data.articleList.items[0].title;
+document.getElementById(adventureDiv.id).innerHTML += "<section><h3>"+ adventureTitle + "</h3></section>";
 
-        return items.map((item) => {
-            const imageUrl = getImageUrl(item.primaryImage, isUE);
-            return {
-                _path: item._path,
-                title: item.title,
-                description: item.slug["plaintext"],
-                cta: { 
-                    text: item.ctaText,
-                    link: item.ctaLink,
-                },
-                image: {
-                    url: imageUrl,
-                    deliveryUrl: getImageUrl(item.primaryImage, false),
-                    width: item.primaryImage["width"],
-                    height: item.primaryImage["height"],
-                    mimeType: item.primaryImage["mimeType"],
-                },
-            };
-        });
-    } catch (error) {
-        console.error("Fetch error:", error);
-        return []; // Return an empty array or handle the error as needed
-    }
-}
+//const adventureDesc = response.data.adventureList.items[0].description.plaintext;
+const adventureDesc = response.data.articleList.items[0].main.plaintext;
+document.getElementById(adventureDiv.id).innerHTML += "<section>" + adventureDesc + "</section>";
 
+const adventureType = response.data.adventureList.items[0].adventureType;
+document.getElementById(adventureDiv.id).innerHTML += "<section>" + "Adventure Type: " + adventureType + "</section>";
 
+const tripLength = response.data.adventureList.items[0].tripLength;
+document.getElementById(adventureDiv.id).innerHTML += "<section>" +"Trip Length: " + tripLength + "</section>";
 
+const tripDifficulty = response.data.adventureList.items[0].difficulty;
+document.getElementById(adventureDiv.id).innerHTML += "<section>" + "Difficulty: " + tripDifficulty + "</section>";
 
+const groupSize = response.data.adventureList.items[0].groupSize;
+document.getElementById(adventureDiv.id).innerHTML += "<section>" + "Group Size: " + groupSize + "</section>";
 
-/**
- * Detects whether the site is embedded in the universal editor by counting parent frames
- * @returns {boolean}
- */
-function isUniversalEditorActive() {
-    return window.location.ancestorOrigins?.length > 0;
-}
+const tripItinerary= response.data.adventureList.items[0].itinerary.html;
+document.getElementById(adventureDiv.id).innerHTML += "<section>" + "Itinerary: </br>" + tripItinerary + "</section>";
 
-/**
- * Update the persisted query url to use the authoring endpoint
- * @param {string} persistedQuery 
- * @returns {string}
- */
-function useAuthorQuery(persistedQuery) {
-    return persistedQuery.replace("//publish-", "//author-");
-}
+})
+.catch(error => {
+  console.log('Error fetching data:', error);
+});
 
-/**
- * Updates url to contain a query parameter to prevent caching
- * @param {string} url 
- * @returns url with cache killer query parameter
- */
-function addCacheKiller(url) {
-    let newUrl = new URL(url);
-    let params = newUrl.searchParams;
-    params.append("ck", Date.now());
-    return newUrl.toString();
-}
+  
 
-
-function getImageUrl(image, isUE) {
-    if (isUE) { 
-        return image["_authorUrl"];
-    }
-    const url = new URL(image["_publishUrl"])
-    return `https://${url.hostname}${image["_dynamicUrl"]}`
-    /*return `${image["_publishUrl"]}`*/
 }
