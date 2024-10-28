@@ -18,8 +18,11 @@
 
  :root {
   /* colors */
-  --link-color: #026169;
-  --link-hover-color: #3E6470;
+  /* --link-color: #026169; 
+  --link-hover-color: #3E6470; */
+   #d40511;
+   --link-color: #d40511; 
+  --link-hover-color: #d40511;
   --background-color: #fff;
   --overlay-background-color: #eee;
   --highlight-background-color: #ccc;
@@ -177,7 +180,7 @@ button:disabled, button:disabled:hover {
 }
 
 a.button.secondary, button.secondary {
-  background-color: unset;
+  background-color: var(--link-color);
   border: 2px solid currentcolor;
   color: var(--text-color)
 }
